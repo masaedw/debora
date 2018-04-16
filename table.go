@@ -6,35 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ColumnType a type of a column
-type ColumnType int
-
-const (
-	// String string
-	String ColumnType = iota
-	// Integer 64bit integer
-	Integer
-)
-
-// ColumnDefinition a column definition
-type ColumnDefinition struct {
-	Type ColumnType
-	Name string
-}
-
-// Column a column
-type Column interface {
-	Type() ColumnType
-	Name() string
-	StringValue() *string
-	IntegerValue() *int64
-}
-
-// Row a row in a table
-type Row interface {
-	Columns() []Column
-}
-
 // WhereClause where clause
 type WhereClause func(*Row) bool
 
@@ -49,45 +20,6 @@ type Table interface {
 	Get(int) (Row, error)
 	Query() Queryable
 	Insert(columns ...interface{}) error
-}
-
-// Database a database
-type Database interface {
-	Tables() []Table
-	CreateTable(name string, columns ...ColumnDefinition) (Table, error)
-	Get(string) (Table, error)
-}
-
-type column struct {
-	definition   *ColumnDefinition
-	integerValue *int64
-	stringValue  *string
-}
-
-func (c *column) Type() ColumnType {
-	return c.definition.Type
-}
-
-func (c *column) Name() string {
-	return c.definition.Name
-}
-
-func (c *column) StringValue() *string {
-	return c.stringValue
-}
-
-func (c *column) IntegerValue() *int64 {
-	return c.integerValue
-}
-
-type row []*column
-
-func (row row) Columns() []Column {
-	cx := make([]Column, len(row))
-	for i, r := range row {
-		cx[i] = r
-	}
-	return cx
 }
 
 type table struct {
@@ -152,53 +84,4 @@ func (t *table) Insert(cols ...interface{}) error {
 
 	t.data = append(t.data, row)
 	return nil
-}
-
-type database struct {
-	tables []*table
-}
-
-func (d *database) Tables() []Table {
-	tx := make([]Table, len(d.tables))
-	for i, t := range d.tables {
-		tx[i] = t
-	}
-	return tx
-}
-
-func (d *database) has(name string) bool {
-	for _, t := range d.tables {
-		if t.name == name {
-			return true
-		}
-	}
-	return false
-}
-
-func (d *database) CreateTable(name string, columns ...ColumnDefinition) (Table, error) {
-	if d.has(name) {
-		return nil, errors.Errorf("the %s table is already exists", name)
-	}
-
-	if len(columns) == 0 {
-		return nil, errors.Errorf("no columns")
-	}
-
-	t := &table{
-		name:   name,
-		schema: columns,
-		data:   []row{},
-	}
-	d.tables = append(d.tables, t)
-
-	return t, nil
-}
-
-func (d *database) Get(name string) (Table, error) {
-	for _, t := range d.tables {
-		if t.name == name {
-			return t, nil
-		}
-	}
-	return nil, errors.Errorf("no such table %s", name)
 }
