@@ -7,7 +7,7 @@ import (
 // Database a database
 type Database interface {
 	Tables() []Table
-	CreateTable(name string, columns ...ColumnDefinition) (Table, error)
+	CreateTable(name string, column ...string) (Table, error)
 	Get(string) (Table, error)
 }
 
@@ -39,7 +39,19 @@ func (d *database) has(name string) bool {
 	return false
 }
 
-func (d *database) CreateTable(name string, columns ...ColumnDefinition) (Table, error) {
+func parseColumns(columns []string) ([]*ColumnDefinition, error) {
+	cx := make([]*ColumnDefinition, len(columns))
+	for i, column := range columns {
+		c, err := parseColumnDefinition(column)
+		if err != nil {
+			return nil, errors.Wrapf(err, "can't parse columns[%d]", i)
+		}
+		cx[i] = c
+	}
+	return cx, nil
+}
+
+func (d *database) CreateTable(name string, columns ...string) (Table, error) {
 	if d.has(name) {
 		return nil, errors.Errorf("the %s table is already exists", name)
 	}
@@ -48,9 +60,14 @@ func (d *database) CreateTable(name string, columns ...ColumnDefinition) (Table,
 		return nil, errors.Errorf("no columns")
 	}
 
+	schema, err := parseColumns(columns)
+	if err != nil {
+		return nil, err
+	}
+
 	t := &table{
 		name:   name,
-		schema: columns,
+		schema: schema,
 		data:   []row{},
 	}
 	d.tables = append(d.tables, t)

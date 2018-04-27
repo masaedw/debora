@@ -1,8 +1,6 @@
 package debora
 
 import (
-	"reflect"
-
 	"github.com/pkg/errors"
 )
 
@@ -24,7 +22,7 @@ type Table interface {
 
 type table struct {
 	name   string
-	schema []ColumnDefinition
+	schema []*ColumnDefinition
 	data   []row
 }
 
@@ -48,26 +46,11 @@ func (t *table) makeRow(cols []interface{}) (row, error) {
 	row := make([]*column, len(t.schema))
 
 	for i, d := range t.schema {
-		switch d.Type {
-		case String:
-			v, ok := cols[i].(string)
-			if !ok {
-				return nil, errors.Errorf("requried string as cols[%d] but got %s", i, reflect.TypeOf(cols[i]))
-			}
-			row[i] = &column{definition: &d, stringValue: &v}
-			continue
-
-		case Integer:
-			v, ok := cols[i].(int64)
-			if !ok {
-				return nil, errors.Errorf("requried int64 as cols[%d] but got %s", i, reflect.TypeOf(cols[i]))
-			}
-			row[i] = &column{definition: &d, integerValue: &v}
-			continue
-
-		default:
-			return nil, errors.Errorf("cols[%d] is unsupported type: %s", i, reflect.TypeOf(cols[i]))
+		c, err := d.makeColumn(cols[i])
+		if err != nil {
+			return nil, errors.Wrapf(err, "cols[%d] is invalid", i)
 		}
+		row[i] = c
 	}
 	return row, nil
 }
