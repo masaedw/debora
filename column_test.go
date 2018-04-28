@@ -27,12 +27,12 @@ func TestParseColumnDefinition(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if c.Type != p.columnType {
-			t.Errorf("the type %v expected but got %v from %s", p.columnType, c.Type, p.pattern)
+		if c.ColumnType() != p.columnType {
+			t.Errorf("the type %v expected but got %v from %s", p.columnType, c.ColumnType(), p.pattern)
 		}
 
-		if c.Name != p.name {
-			t.Errorf("name %v expected but got %v from %s", p.name, c.Name, p.pattern)
+		if c.Name() != p.name {
+			t.Errorf("name %v expected but got %v from %s", p.name, c.Name(), p.pattern)
 		}
 	}
 

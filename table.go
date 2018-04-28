@@ -17,12 +17,13 @@ type Table interface {
 	Name() string
 	Get(int) (Row, error)
 	Query() Queryable
+	Schema() []ColumnDefinition
 	Insert(columns ...interface{}) error
 }
 
 type table struct {
 	name   string
-	schema []*ColumnDefinition
+	schema []*simpleDefinition
 	data   []row
 }
 
@@ -67,4 +68,12 @@ func (t *table) Insert(cols ...interface{}) error {
 
 	t.data = append(t.data, row)
 	return nil
+}
+
+func (t *table) Schema() []ColumnDefinition {
+	dx := make([]ColumnDefinition, len(t.schema))
+	for i, d := range t.schema {
+		dx[i] = d
+	}
+	return dx
 }

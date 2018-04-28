@@ -18,9 +18,22 @@ const (
 )
 
 // ColumnDefinition a column definition
-type ColumnDefinition struct {
-	Type ColumnType
-	Name string
+type ColumnDefinition interface {
+	ColumnType() ColumnType
+	Name() string
+}
+
+type simpleDefinition struct {
+	columnType ColumnType
+	name       string
+}
+
+func (d *simpleDefinition) ColumnType() ColumnType {
+	return d.columnType
+}
+
+func (d *simpleDefinition) Name() string {
+	return d.name
 }
 
 // Column a column
@@ -32,17 +45,17 @@ type Column interface {
 }
 
 type column struct {
-	definition   *ColumnDefinition
+	definition   ColumnDefinition
 	integerValue *int64
 	stringValue  *string
 }
 
 func (c *column) Type() ColumnType {
-	return c.definition.Type
+	return c.definition.ColumnType()
 }
 
 func (c *column) Name() string {
-	return c.definition.Name
+	return c.definition.Name()
 }
 
 func (c *column) StringValue() *string {
@@ -55,26 +68,26 @@ func (c *column) IntegerValue() *int64 {
 
 var columnPattern = regexp.MustCompile(`^([^:]+)(:(string|integer))?$`)
 
-func parseColumnDefinition(column string) (*ColumnDefinition, error) {
+func parseColumnDefinition(column string) (*simpleDefinition, error) {
 	m := columnPattern.FindStringSubmatch(column)
 	if m == nil {
 		return nil, errors.Errorf("invalid column name: %v", column)
 	}
 
-	c := &ColumnDefinition{
-		Name: m[1],
-		Type: String,
+	c := &simpleDefinition{
+		name: m[1],
+		columnType: String,
 	}
 
 	if m[3] == "integer" {
-		c.Type = Integer
+		c.columnType = Integer
 	}
 
 	return c, nil
 }
 
-func (d *ColumnDefinition) makeColumn(col interface{}) (*column, error) {
-	switch d.Type {
+func (d *simpleDefinition) makeColumn(col interface{}) (*column, error) {
+	switch d.columnType {
 	case String:
 		v, ok := col.(string)
 		if !ok {

@@ -39,8 +39,8 @@ func (d *database) has(name string) bool {
 	return false
 }
 
-func parseColumns(columns []string) ([]*ColumnDefinition, error) {
-	cx := make([]*ColumnDefinition, len(columns))
+func parseColumns(columns []string) ([]*simpleDefinition, error) {
+	cx := make([]*simpleDefinition, len(columns))
 	for i, column := range columns {
 		c, err := parseColumnDefinition(column)
 		if err != nil {
