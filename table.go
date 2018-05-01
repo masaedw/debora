@@ -5,19 +5,34 @@ import (
 )
 
 // WhereClause where clause
-type WhereClause func(*Row) bool
+type WhereClause func(Row) bool
+
+// ColumnSelector column selector
+type ColumnSelector func(TableLike) ColumnDefinition
+
+// Iterator iterator procedure
+type Iterator func(Row)
+
+// TableLike a table like object
+type TableLike interface {
+	Schema() []ColumnDefinition
+	ForEach(Iterator)
+}
 
 // Queryable query
 type Queryable interface {
+	TableLike
 	Where(WhereClause) Queryable
+	Select(...ColumnSelector) Queryable
+	Slice() ([]Row, error)
+	First() (Row, error)
 }
 
 // Table a table
 type Table interface {
+	TableLike
 	Name() string
 	Get(int) (Row, error)
-	Query() Queryable
-	Schema() []ColumnDefinition
 	Insert(columns ...interface{}) error
 }
 
@@ -32,15 +47,10 @@ func (t *table) Name() string {
 }
 
 func (t *table) Get(i int) (Row, error) {
-	if 0 < i && i < len(t.data) {
-		return t.data[i], nil
+	if 0 <= i && i < len(t.data) {
+		return t.data[i].Columns(), nil
 	}
 	return nil, errors.Errorf("out of index: %d", i)
-}
-
-func (t *table) Query() Queryable {
-	// todo implement
-	return nil
 }
 
 func (t *table) makeRow(cols []interface{}) (row, error) {
@@ -76,4 +86,10 @@ func (t *table) Schema() []ColumnDefinition {
 		dx[i] = d
 	}
 	return dx
+}
+
+func (t *table) ForEach(proc Iterator) {
+	for _, row := range t.data {
+		proc(row.Columns())
+	}
 }

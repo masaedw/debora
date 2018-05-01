@@ -1,9 +1,7 @@
 package debora
 
 // Row a row in a table
-type Row interface {
-	Columns() []Column
-}
+type Row []Column
 
 type row []*column
 
