@@ -19,6 +19,15 @@ type TableLike interface {
 	ForEach(Iterator)
 }
 
+type emptyTableLike struct{}
+
+func (t *emptyTableLike) Schema() []ColumnDefinition {
+	return []ColumnDefinition{}
+}
+
+func (t *emptyTableLike) ForEach(Iterator) {
+}
+
 // Queryable query
 type Queryable interface {
 	TableLike

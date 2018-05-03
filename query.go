@@ -9,10 +9,17 @@ type whereQuery struct {
 	condition WhereClause
 }
 
+func ensureTableLike(t TableLike) TableLike {
+	if t == nil {
+		return &emptyTableLike{}
+	}
+	return t
+}
+
 // From create query
 func From(t TableLike) Queryable {
 	return &whereQuery{
-		table:     t,
+		table:     ensureTableLike(t),
 		condition: func(Row) bool { return true },
 	}
 }
@@ -22,7 +29,7 @@ func (w *whereQuery) Schema() []ColumnDefinition {
 }
 
 func (w *whereQuery) ForEach(proc Iterator) {
-	w.ForEach(func(row Row) {
+	w.table.ForEach(func(row Row) {
 		if w.condition(row) {
 			proc(row)
 		}
@@ -31,7 +38,7 @@ func (w *whereQuery) ForEach(proc Iterator) {
 
 func (w *whereQuery) Where(cond WhereClause) Queryable {
 	return &whereQuery{
-		table:     w,
+		table:     ensureTableLike(w),
 		condition: cond,
 	}
 }
